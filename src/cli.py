@@ -1,4 +1,4 @@
-"""CLI do catalogo."""
+"""CLI do catalogo (ainda não executavel)"""
 
 from __future__ import annotations
 
