@@ -25,22 +25,31 @@ Persistência vai ser em JSON via `dados.py`, e as configurações ficam no
 ├── README.md
 ├── settings.json
 └── src
-    ├── cli.py                  # interface de linha de comando
-    ├── catalogo.py             # Catalogo: guarda mídias, impede duplicidade
-    ├── configuracoes.py        # Configuracoes: lê o settings.json
-    ├── dados.py                # salvar/carregar (JSON) e seed
-    ├── relatorios.py           # relatórios do catálogo
-    └── models
-        ├── enums.py            # TipoMidia, StatusVisualizacao
-        ├── midia.py            # Midia (base)
-        ├── filme.py            # Filme
-        ├── serie.py            # Serie
-        ├── temporada.py        # Temporada
-        ├── episodio.py         # Episodio
-        ├── usuario.py          # Usuario
-        ├── lista_personalizada.py
-        └── registro_historico.py
+    ├── cli.py                    # interface de linha de comando (ponto de entrada)
+    ├── models                    # as classes do domínio
+    │   ├── enums.py              # TipoMidia, StatusVisualizacao
+    │   ├── midia.py              # Midia (base)
+    │   ├── filme.py              # Filme
+    │   ├── serie.py              # Serie
+    │   ├── temporada.py          # Temporada
+    │   ├── episodio.py           # Episodio
+    │   ├── usuario.py            # Usuario
+    │   ├── lista_personalizada.py
+    │   └── registro_historico.py
+    ├── services                  # regras de negócio
+    │   ├── catalogo.py           # Catalogo: guarda mídias, impede duplicidade
+    │   └── relatorios.py         # relatórios do catálogo
+    ├── persistence
+    │   └── dados.py              # salvar/carregar (JSON) e seed
+    ├── config
+    │   └── configuracoes.py      # Configuracoes: lê o settings.json
+    └── utils
+        └── validacoes.py         # funções de validação usadas nos setters
 ```
+
+Cada pasta tem uma responsabilidade: `models` só tem classes do domínio,
+`services` as regras que envolvem várias mídias, `persistence` o acesso a
+arquivo, `config` as configurações e `utils` funções de apoio.
 
 ## Estrutura de classes
 
@@ -72,9 +81,9 @@ CLASSES
 Midia
   atributos:
     - titulo: str                       (não vazio)
-    - tipo: TipoMidia
+    - tipo: TipoMidia                   (só leitura)
     - genero: str
-    - ano: int
+    - ano: int                          (>= 1888)
     - duracao_minutos: int | None       (> 0; None em Serie)
     - classificacao_indicativa: str
     - elenco: list[str]
@@ -87,28 +96,35 @@ Midia
     + marcar_concluida(quando)
     + __str__() / __repr__()
     + __eq__(other)                     compara por titulo + tipo
+    + __hash__()                        coerente com o __eq__
     + __lt__(other)                     compara por nota média
 
 Filme (herda de Midia)
-  atributos: nenhum extra (tipo fixo em FILME)
+  atributos: nenhum extra (tipo fixo em FILME, duração obrigatória)
   métodos: nenhum extra
 
 Serie (herda de Midia)
   atributos:
-    - temporadas: list[Temporada]       (tipo fixo em SERIE)
+    - temporadas: list[Temporada]       (tipo fixo em SERIE; só leitura)
+    - nota: float | None                (só leitura = nota_media())
   métodos:
     + adicionar_temporada(temporada)
+    + adicionar_episodio(episodio)      cria a temporada se ainda não existir
+    + todos_episodios() -> list[Episodio]
     + episodios_assistidos() -> int
+    + duracao_total() -> int            soma dos episódios
     + nota_media() -> float | None      média das notas dos episódios
     + atualizar_status()                vira ASSISTIDO quando todos os episódios forem
+    + marcar_concluida(quando)          marca todos os episódios
     + __len__()                         total de episódios
 
 Temporada
   atributos:
     - numero: int                       (> 0)
-    - episodios: list[Episodio]
+    - episodios: list[Episodio]         (só leitura)
   métodos:
-    + adicionar_episodio(episodio)
+    + adicionar_episodio(episodio)      não aceita número repetido
+    + duracao_total() -> int
     + todos_assistidos() -> bool
     + __len__()                         número de episódios da temporada
 
@@ -195,41 +211,24 @@ Usuario             --> Configuracoes  associação (usa o limite de listas)
 `<>--` é o losango (o "todo" fica do lado do losango) e `-->` é associação
 simples.
 
-## Relatórios (funções em `relatorios.py`)
+## Rodando
 
-- `media_por_genero`: nota média por gênero
-- `tempo_assistido_por_tipo`: horas assistidas de filme e de série
-- `top_melhores`: top 10 filmes/séries mais bem avaliados
-- `series_mais_assistidas`: séries com mais episódios assistidos
-- `tempo_assistido_no_periodo`: tempo assistido por semana/mês
-
-Todos consideram só mídias com status ASSISTIDO.
-
-## Configurações (`settings.json`)
-
-```json
-{
-  "nota_minima_recomendado": 7.5,
-  "limite_listas_por_usuario": 10,
-  "multiplicador_duracao": 0.0166667,
-  "casas_decimais_horas": 1
-}
-```
-
-## Rodando (ainda não funciona, só estrutura por enquanto)
+A CLI ainda não funciona (entra nas próximas semanas):
 
 ```bash
 python -m src.cli --help
 ```
 
-## Testes
+Por enquanto dá pra testar as classes direto no Python, como no exemplo de
+uso acima.
 
-pytest, cobrindo criação/validação de mídias, cálculo de notas, tempo
-assistido, duplicidade de título+tipo+ano, e os relatórios. Meta é pelo
-menos 15 testes no final.
-
-## Onde estou (semana 1)
+## Onde estou (semana 2)
 
 - [x] estrutura de classes definida (esse README)
 - [x] UML textual
-- [x] classes criadas com atributos e docstrings, sem lógica ainda
+- [x] projeto organizado em pastas (`models`, `services`, `persistence`, `config`, `utils`)
+- [x] `Midia`, `Filme`, `Serie`, `Temporada` e `Episodio` implementadas
+- [x] validações com `@property`
+- [x] métodos especiais: `__str__`, `__repr__`, `__eq__`, `__hash__`, `__lt__`, `__len__`
+- [ ] testes básicos com pytest
+- [ ] `Usuario`, `ListaPersonalizada`, `Catalogo`, persistência em JSON e relatórios (semanas 3 a 5)
