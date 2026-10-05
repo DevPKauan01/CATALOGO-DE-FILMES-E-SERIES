@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.configuracoes import Configuracoes
+from src.config.configuracoes import Configuracoes
 from src.models.lista_personalizada import ListaPersonalizada
 from src.models.midia import Midia
 from src.models.registro_historico import RegistroHistorico
