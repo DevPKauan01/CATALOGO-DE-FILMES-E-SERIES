@@ -6,12 +6,14 @@ from datetime import datetime
 
 from src.models.enums import StatusVisualizacao, TipoMidia
 from src.models.midia import Midia
+from src.utils.validacoes import validar_inteiro_positivo
 
 
 class Filme(Midia):
     """Filme do catalogo. Usa duracao e nota direto da Midia.
 
     Fixa tipo = TipoMidia.FILME. Sem atributos extras por enquanto.
+    Diferente da Serie, o filme e obrigado a ter duracao (> 0).
     """
 
     def __init__(
@@ -26,6 +28,8 @@ class Filme(Midia):
         nota: float | None = None,
         data_conclusao: datetime | None = None,
     ) -> None:
+        # Na Midia a duracao pode ser None (por causa da Serie), mas filme precisa ter
+        validar_inteiro_positivo(duracao_minutos, "A duracao")
         super().__init__(
             titulo=titulo,
             tipo=TipoMidia.FILME,
