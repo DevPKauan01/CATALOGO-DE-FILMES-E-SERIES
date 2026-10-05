@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from src.catalogo import Catalogo
-from src.configuracoes import Configuracoes
+from src.services.catalogo import Catalogo
+from src.config.configuracoes import Configuracoes
 from src.models.midia import Midia
 from src.models.serie import Serie
 

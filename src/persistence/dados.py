@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from src.catalogo import Catalogo
+from src.services.catalogo import Catalogo
 from src.models.usuario import Usuario
 
 
