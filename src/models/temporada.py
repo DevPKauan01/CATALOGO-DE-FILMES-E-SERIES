@@ -87,3 +87,22 @@ class Temporada:
 
     def __repr__(self) -> str:
         return f"Temporada(numero={self.numero})"
+
+    def episodios_assistidos(self) -> int:
+        """Quantidade de episodios da temporada com status ASSISTIDO."""
+        return sum(
+            1 for ep in self._episodios if ep.status == StatusVisualizacao.ASSISTIDO
+        )
+
+    def para_dict(self) -> dict[str, object]:
+        """Temporada com seus episodios, pronta pra virar JSON."""
+        return {
+            "numero": self.numero,
+            "episodios": [ep.para_dict() for ep in self._episodios],
+        }
+
+    @classmethod
+    def de_dict(cls, dados: dict) -> Temporada:
+        """Reconstroi a Temporada e seus episodios."""
+        episodios = [Episodio.de_dict(ep) for ep in dados.get("episodios", [])]
+        return cls(dados["numero"], episodios)
