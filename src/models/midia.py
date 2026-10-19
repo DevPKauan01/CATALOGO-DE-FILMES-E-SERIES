@@ -20,9 +20,7 @@ from src.utils.validacoes import (
 
 
 class Midia:
-    """Midia generica do catalogo.
-
-    Atributos (todos validados por @property):
+    """Atributos (todos validados por @property):
         titulo: titulo da midia (nao pode ser vazio).
         tipo: TipoMidia.FILME ou TipoMidia.SERIE (so leitura).
         genero: genero principal (ex.: "Drama", "Ficcao").
@@ -33,12 +31,7 @@ class Midia:
         elenco: lista com nomes do elenco.
         status: StatusVisualizacao atual.
         nota: nota do usuario de 0 a 10 (None se ainda nao avaliada).
-        data_conclusao: data/hora em que foi concluida (None se nao foi).
-
-    __eq__ compara por titulo + tipo (sem diferenciar maiuscula/minuscula).
-    Como definimos __eq__, tambem definimos __hash__ coerente com ele,
-    assim a midia pode ser usada em set e dict.
-    """
+        data_conclusao: data/hora em que foi concluida (None se nao foi)."""
 
     def __init__(
         self,
@@ -185,6 +178,48 @@ class Midia:
         """
         self.status = StatusVisualizacao.ASSISTIDO
         self.data_conclusao = quando if quando is not None else datetime.now()
+
+    # ------------------------------------------------------------------
+    # Metodos que as subclasses estendem (herenca funcional)
+    # ------------------------------------------------------------------
+    def detalhes(self) -> str:
+        """Texto com mais detalhes da midia (Serie acrescenta as temporadas)."""
+        elenco = ", ".join(self.elenco) if self.elenco else "nao informado"
+        return (
+            f"{self}\n"
+            f"  Classificacao: {self.classificacao_indicativa}\n"
+            f"  Elenco: {elenco}"
+        )
+
+    def minutos_assistidos_no_periodo(self, inicio: datetime, fim: datetime) -> int:
+        """Minutos assistidos entre duas datas.
+
+        Aqui vale a midia inteira (se foi concluida dentro do periodo).
+        Serie sobrescreve e conta episodio por episodio.
+        """
+        if self.status != StatusVisualizacao.ASSISTIDO or self.data_conclusao is None:
+            return 0
+        if inicio <= self.data_conclusao <= fim:
+            return self.duracao_total()
+        return 0
+
+    def para_dict(self) -> dict[str, object]:
+        """Dados em comum entre Filme e Serie, prontos pra virar JSON.
+
+        As subclasses chamam super().para_dict() e acrescentam o que e delas.
+        """
+        return {
+            "tipo": self.tipo.value,
+            "titulo": self.titulo,
+            "genero": self.genero,
+            "ano": self.ano,
+            "classificacao_indicativa": self.classificacao_indicativa,
+            "elenco": self.elenco,
+            "status": self.status.value,
+            "data_conclusao": (
+                self.data_conclusao.isoformat() if self.data_conclusao else None
+            ),
+        }
 
     # ------------------------------------------------------------------
     # Metodos especiais
