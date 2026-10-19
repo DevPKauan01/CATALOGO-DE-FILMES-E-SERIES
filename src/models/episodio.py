@@ -141,3 +141,33 @@ class Episodio:
             f"Episodio(temporada={self.numero_temporada}, "
             f"episodio={self.numero_episodio}, titulo={self.titulo!r})"
         )
+
+    def para_dict(self) -> dict[str, object]:
+        """Episodio pronto pra virar JSON (datas em texto ISO)."""
+        return {
+            "numero_temporada": self.numero_temporada,
+            "numero_episodio": self.numero_episodio,
+            "titulo": self.titulo,
+            "duracao_minutos": self.duracao_minutos,
+            "data_lancamento": self.data_lancamento.isoformat(),
+            "status": self.status.value,
+            "nota": self.nota,
+            "data_conclusao": (
+                self.data_conclusao.isoformat() if self.data_conclusao else None
+            ),
+        }
+
+    @classmethod
+    def de_dict(cls, dados: dict) -> Episodio:
+        """Reconstroi o Episodio a partir do dict (passa pelas validacoes)."""
+        conclusao = dados.get("data_conclusao")
+        return cls(
+            numero_temporada=dados["numero_temporada"],
+            numero_episodio=dados["numero_episodio"],
+            titulo=dados["titulo"],
+            duracao_minutos=dados["duracao_minutos"],
+            data_lancamento=datetime.fromisoformat(dados["data_lancamento"]).date(),
+            status=dados.get("status", StatusVisualizacao.NAO_ASSISTIDO),
+            nota=dados.get("nota"),
+            data_conclusao=datetime.fromisoformat(conclusao) if conclusao else None,
+        )
