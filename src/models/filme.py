@@ -42,3 +42,29 @@ class Filme(Midia):
             nota=nota,
             data_conclusao=data_conclusao,
         )
+
+    # ------------------------------------------------------------------
+    # Conversao pra dict (usada na persistencia em JSON)
+    # ------------------------------------------------------------------
+    def para_dict(self) -> dict[str, object]:
+        """Dados da Midia + duracao e nota (que so o filme guarda direto)."""
+        dados = super().para_dict()
+        dados["duracao_minutos"] = self.duracao_minutos
+        dados["nota"] = self.nota
+        return dados
+
+    @classmethod
+    def de_dict(cls, dados: dict) -> Filme:
+        """Reconstroi um Filme a partir do dict (passa pelas validacoes)."""
+        conclusao = dados.get("data_conclusao")
+        return cls(
+            titulo=dados["titulo"],
+            genero=dados["genero"],
+            ano=dados["ano"],
+            duracao_minutos=dados["duracao_minutos"],
+            classificacao_indicativa=dados["classificacao_indicativa"],
+            elenco=dados.get("elenco"),
+            status=dados.get("status", StatusVisualizacao.NAO_ASSISTIDO),
+            nota=dados.get("nota"),
+            data_conclusao=datetime.fromisoformat(conclusao) if conclusao else None,
+        )
