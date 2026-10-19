@@ -28,8 +28,6 @@ class Serie(Midia):
     serie.atualizar_status() depois (e o que o subcomando
     'serie atualizar-status' da CLI vai fazer).
 
-    Cuidado: como existe __len__, uma serie sem episodios tem len 0 e
-    'if serie:' da False. Pra testar se existe, use 'is not None'.
     """
 
     def __init__(
@@ -178,3 +176,49 @@ class Serie(Midia):
 
     def __str__(self) -> str:
         return f"{super().__str__()} - {len(self)} episodios"
+    
+    # ------------------------------------------------------------------
+    # Metodos que sobrescrevem/estendem os da Midia
+    # ------------------------------------------------------------------
+    def detalhes(self) -> str:
+        """Detalhes da Midia + uma linha por temporada."""
+        linhas = [super().detalhes()]
+        for temporada in self.temporadas:
+            linhas.append(
+                f"  {temporada} - {temporada.episodios_assistidos()} assistidos"
+            )
+        return "\n".join(linhas)
+
+    def minutos_assistidos_no_periodo(self, inicio: datetime, fim: datetime) -> int:
+        """Soma so os episodios assistidos dentro do periodo."""
+        return sum(
+            ep.duracao_minutos
+            for ep in self.todos_episodios()
+            if ep.status == StatusVisualizacao.ASSISTIDO
+            and ep.data_conclusao is not None
+            and inicio <= ep.data_conclusao <= fim
+        )
+
+    def para_dict(self) -> dict[str, object]:
+        """Dados da Midia + temporadas (que levam os episodios junto)."""
+        dados = super().para_dict()
+        dados["temporadas"] = [t.para_dict() for t in self.temporadas]
+        return dados
+
+    @classmethod
+    def de_dict(cls, dados: dict) -> Serie:
+        """Reconstroi a Serie e suas temporadas/episodios.
+
+        O status e a data de conclusao nao sao lidos do dict: a propria
+        serie recalcula (atualizar_status) a partir dos episodios.
+        """
+        serie = cls(
+            titulo=dados["titulo"],
+            genero=dados["genero"],
+            ano=dados["ano"],
+            classificacao_indicativa=dados["classificacao_indicativa"],
+            elenco=dados.get("elenco"),
+        )
+        for dados_temporada in dados.get("temporadas", []):
+            serie.adicionar_temporada(Temporada.de_dict(dados_temporada))
+        return serie
