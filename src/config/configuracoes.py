@@ -2,6 +2,9 @@
 
 from __future__ import annotations
 
+import json
+import os
+
 
 class Configuracoes:
     """Parametros configuraveis do catalogo.
@@ -27,9 +30,22 @@ class Configuracoes:
 
     @classmethod
     def carregar(cls, caminho: str = "settings.json") -> Configuracoes:
-        """Le o settings.json e devolve as configuracoes."""
-        raise NotImplementedError
+        """Le o settings.json e devolve as configuracoes.
+
+        Se o arquivo nao existir, usa os valores padrao. Chaves que faltarem
+        no arquivo tambem ficam com o valor padrao.
+        """
+        if not os.path.exists(caminho):
+            return cls()
+        with open(caminho, encoding="utf-8") as arquivo:
+            dados = json.load(arquivo)
+        return cls(
+            nota_minima_recomendado=dados.get("nota_minima_recomendado", 7.5),
+            limite_listas_por_usuario=dados.get("limite_listas_por_usuario", 10),
+            multiplicador_duracao=dados.get("multiplicador_duracao", 1 / 60),
+            casas_decimais_horas=dados.get("casas_decimais_horas", 1),
+        )
 
     def minutos_para_horas(self, minutos: int) -> float:
         """Converte minutos em horas usando multiplicador e arredondamento."""
-        raise NotImplementedError
+        return round(minutos * self.multiplicador_duracao, self.casas_decimais_horas)
