@@ -15,8 +15,8 @@ composição (Serie tem Temporadas, Temporada tem Episodios), encapsulamento
 com `@property` pras validações, e os métodos especiais pedidos (`__str__`,
 `__repr__`, `__eq__`, `__len__`, `__lt__`).
 
-Persistência vai ser em JSON via `dados.py`, e as configurações ficam no
-`settings.json`.
+A persistência é em JSON via `dados.py` (pasta `dados/`), e as configurações
+ficam no `settings.json`.
 
 ## Estrutura do projeto
 
@@ -24,8 +24,13 @@ Persistência vai ser em JSON via `dados.py`, e as configurações ficam no
 .
 ├── README.md
 ├── settings.json
+├── pytest.ini                # configuração do pytest
+├── dados/                    # catalogo.json e usuario.json (criados no 1º uso)
+├── tests
+│   └── test_catalogo.py      # testes com pytest
 └── src
-    ├── cli.py                    # interface de linha de comando (ponto de entrada)
+    ├── cli.py                    # CLI com subcomandos (ponto de entrada)
+    ├── menu.py                   # menu interativo (abre com `python -m src.cli`)
     ├── models                    # as classes do domínio
     │   ├── enums.py              # TipoMidia, StatusVisualizacao
     │   ├── midia.py              # Midia (base)
@@ -37,6 +42,7 @@ Persistência vai ser em JSON via `dados.py`, e as configurações ficam no
     │   ├── lista_personalizada.py
     │   └── registro_historico.py
     ├── services                  # regras de negócio
+    │   ├── sistema.py            # Sistema: fachada usada pela CLI e pelo menu
     │   ├── catalogo.py           # Catalogo: guarda mídias, impede duplicidade
     │   └── relatorios.py         # relatórios do catálogo
     ├── persistence
@@ -64,6 +70,7 @@ arquivo, `config` as configurações e `utils` funções de apoio.
 | `ListaPersonalizada` | lista nomeada de mídias ("Favoritos", "Pra assistir") |
 | `RegistroHistorico` | data/hora de conclusão de uma mídia |
 | `Catalogo` | coleção de mídias; garante que não haja duplicidade |
+| `Sistema` | fachada: junta Catalogo, Usuario e Configuracoes; a CLI só chama ele |
 | `Configuracoes` | parâmetros do `settings.json` |
 | `TipoMidia`, `StatusVisualizacao` | enums do domínio |
 
@@ -203,6 +210,8 @@ Usuario   <>-- ListaPersonalizada  composição (1 usuário tem 0..* listas)
 Usuario   <>-- RegistroHistorico   composição (1 usuário tem 0..* registros)
 Catalogo  <>-- Midia               agregação  (1 catálogo tem 0..* mídias)
 
+Sistema   <>-- Catalogo, Usuario, Configuracoes   composição (a fachada usa os três)
+
 ListaPersonalizada  --> Midia          associação (uma lista referencia 0..* mídias)
 RegistroHistorico   --> Midia          associação (um registro referencia 1 mídia)
 Usuario             --> Configuracoes  associação (usa o limite de listas)
@@ -213,22 +222,68 @@ simples.
 
 ## Rodando
 
-A CLI ainda não funciona (entra nas próximas semanas):
+Na raiz do projeto (Python 3.10 ou mais novo). Na primeira execução o catálogo
+é criado com filmes e séries de exemplo (seed) na pasta `dados/`.
+
+### Menu interativo
 
 ```bash
-python -m src.cli --help
+python -m src.cli
 ```
 
-Por enquanto dá pra testar as classes direto no Python, como no exemplo de
-uso acima.
+Sem nenhum comando depois, abre um menu: digite o número da opção e siga as
+perguntas (`0` sai). Também dá pra abrir com `python -m src.menu`.
 
-## Onde estou (semana 2)
+### Subcomandos
 
-- [x] estrutura de classes definida (esse README)
-- [x] UML textual
-- [x] projeto organizado em pastas (`models`, `services`, `persistence`, `config`, `utils`)
-- [x] `Midia`, `Filme`, `Serie`, `Temporada` e `Episodio` implementadas
-- [x] validações com `@property`
-- [x] métodos especiais: `__str__`, `__repr__`, `__eq__`, `__hash__`, `__lt__`, `__len__`
-- [ ] testes básicos com pytest
-- [ ] `Usuario`, `ListaPersonalizada`, `Catalogo`, persistência em JSON e relatórios (semanas 3 a 5)
+```bash
+python -m src.cli midia adicionar --titulo "Matrix" --tipo FILME --genero Ficcao --ano 1999 --duracao 136 --classificacao 14
+python -m src.cli midia avaliar --titulo "Interestelar" --nota 9
+python -m src.cli midia listar --por-nota
+python -m src.cli midia relatorio top
+
+python -m src.cli serie adicionar-episodio --serie "Dark" --temporada 1 --episodio 2 --titulo "Mentiras" --duracao 50 --lancamento 2017-12-08
+python -m src.cli serie atualizar-status --serie "Dark" --temporada 1 --episodio 1 --status ASSISTIDO
+
+python -m src.cli usuario criar-lista --nome "Maratona"
+python -m src.cli usuario adicionar-favorito --titulo "Interestelar" --lista "Maratona"
+```
+
+Outros: `midia detalhes`, `midia concluir`, `midia atualizar-status`,
+`midia relatorio generos | tempo | series | periodo | completo`,
+`serie episodios`, `usuario listas | remover | historico` e
+`seed --forcar` (apaga os dados e recria o exemplo).
+Use `--help` em qualquer comando, por exemplo `python -m src.cli midia --help`.
+
+### Testes
+
+```bash
+python -m pip install pytest
+python -m pytest -v
+```
+
+Os testes cobrem validações, métodos especiais, status automático da série,
+nota média, duplicidade, listas e favoritos, relatórios e persistência.
+
+## Decisões de implementação
+
+- O `Sistema` concentra as regras de negócio; `cli.py` e `menu.py` só leem a
+  entrada, chamam o `Sistema` e mostram o resultado.
+- Só dá pra avaliar o que já foi assistido; a nota da série é a média das
+  notas dos episódios.
+- O status da série é calculado pelos episódios (todos assistidos = ASSISTIDO).
+- Relatórios consideram só mídias com status ASSISTIDO.
+- Erros de regra viram `Erro: ...` com código de saída 1, sem mostrar traceback.
+
+## Onde estou (semana 4)
+
+- [x] estrutura de classes e UML textual
+- [x] `Midia`, `Filme`, `Serie`, `Temporada` e `Episodio` com validações (`@property`) e métodos especiais
+- [x] `Usuario`, `ListaPersonalizada`, `RegistroHistorico`, `Catalogo` e `Sistema`
+- [x] persistência em JSON e seed
+- [x] status automático da série e cálculo de médias
+- [x] listas personalizadas e favoritos
+- [x] CLI com subcomandos e menu interativo
+- [x] testes com pytest
+- [x] relatórios (nota por gênero, tempo por tipo, top, séries mais assistidas, por semana/mês)
+- [ ] refinamento, diagrama final e tag `v1.0` (semana 5)
