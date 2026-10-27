@@ -11,6 +11,7 @@ from datetime import datetime
 from src.models.enums import StatusVisualizacao, TipoMidia
 from src.utils.validacoes import (
     validar_ano,
+    validar_classificacao,
     validar_data_hora_ou_none,
     validar_enum,
     validar_inteiro_positivo,
@@ -113,7 +114,7 @@ class Midia:
 
     @classificacao_indicativa.setter
     def classificacao_indicativa(self, valor: str) -> None:
-        self._classificacao_indicativa = validar_texto(valor, "A classificacao indicativa")
+        self._classificacao_indicativa = validar_classificacao(valor)
 
     @property
     def elenco(self) -> list[str]:

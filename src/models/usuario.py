@@ -2,7 +2,10 @@
 
 from __future__ import annotations
 
+from datetime import datetime
+
 from src.config.configuracoes import Configuracoes
+from src.models.enums import StatusVisualizacao
 from src.models.lista_personalizada import ListaPersonalizada
 from src.models.midia import Midia
 from src.models.registro_historico import RegistroHistorico
@@ -78,11 +81,18 @@ class Usuario:
         Se a lista ainda nao existir, ela e criada.
         """
         lista = self._buscar_lista(nome_lista)
+        criada_agora = lista is None
         if lista is None:
             lista = self.criar_lista(nome_lista)
-        lista.adicionar(midia)
+        try:
+            lista.adicionar(midia)
+        except ValueError:
+            # nao deixa uma lista vazia "sobrando" se a adicao falhou
+            if criada_agora:
+                self.listas.remove(lista)
+            raise
 
-    def registrar_conclusao(self, midia: Midia) -> None:
+    def registrar_conclusao(self, midia: Midia, quando: datetime | None = None) -> None:
         """Marca a midia como concluida e cria o registro no historico.
 
         Raises:
@@ -91,5 +101,25 @@ class Usuario:
         """
         if any(registro.midia == midia for registro in self.historico):
             raise ValueError(f"{midia.titulo!r} ja esta no historico.")
-        midia.marcar_concluida()
+        midia.marcar_concluida(quando)
+        if midia.status != StatusVisualizacao.ASSISTIDO or midia.data_conclusao is None:
+            raise ValueError(
+                f"{midia.titulo!r} nao pode ser concluida (serie sem episodios?)."
+            )
         self.historico.append(RegistroHistorico(midia, midia.data_conclusao))
+
+    def sincronizar_historico(self, midia: Midia) -> None:
+        """Deixa o historico coerente com o status atual da midia.
+
+        - midia ASSISTIDO sem registro      -> cria o registro;
+        - midia ASSISTIDO com registro      -> atualiza a data;
+        - midia que deixou de ser ASSISTIDO -> remove o registro.
+        """
+        registro = next((r for r in self.historico if r.midia == midia), None)
+        if midia.status == StatusVisualizacao.ASSISTIDO and midia.data_conclusao is not None:
+            if registro is None:
+                self.historico.append(RegistroHistorico(midia, midia.data_conclusao))
+            else:
+                registro.data_conclusao = midia.data_conclusao
+        elif registro is not None:
+            self.historico.remove(registro)

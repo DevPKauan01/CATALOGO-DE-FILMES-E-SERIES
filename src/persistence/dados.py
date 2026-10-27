@@ -157,3 +157,20 @@ def seed() -> Catalogo:
     catalogo.adicionar(dark)
 
     return catalogo
+
+
+def seed_usuario(
+    catalogo: Catalogo, configuracoes: Configuracoes | None = None
+) -> Usuario:
+    """Cria o usuario padrao com listas e historico coerentes com o seed."""
+    usuario = Usuario("Usuario", configuracoes)
+    for midia in catalogo.concluidas():
+        usuario.sincronizar_historico(midia)
+    favoritos = usuario.criar_lista("Favoritos")
+    para_assistir = usuario.criar_lista("Para assistir")
+    for midia in catalogo.midias:
+        if midia.titulo == "Interestelar":
+            favoritos.adicionar(midia)
+        if midia.titulo in ("Parasita", "Dark"):
+            para_assistir.adicionar(midia)
+    return usuario

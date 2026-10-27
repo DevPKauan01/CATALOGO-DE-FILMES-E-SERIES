@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from datetime import datetime
+import calendar
+from datetime import date, datetime, time, timedelta
 
 from src.services.catalogo import Catalogo
 from src.config.configuracoes import Configuracoes
@@ -70,6 +71,30 @@ def tempo_assistido_no_periodo(
         midia.minutos_assistidos_no_periodo(inicio, fim) for midia in catalogo.midias
     )
     return config.minutos_para_horas(minutos)
+
+
+def minutos_assistidos_no_periodo(
+    catalogo: Catalogo, inicio: datetime, fim: datetime
+) -> int:
+    """Minutos assistidos entre duas datas (cada midia calcula o seu)."""
+    return sum(
+        midia.minutos_assistidos_no_periodo(inicio, fim) for midia in catalogo.midias
+    )
+
+
+def intervalo_semana(referencia: date) -> tuple[datetime, datetime]:
+    """Inicio (segunda 00:00) e fim (domingo 23:59:59) da semana da data."""
+    segunda = referencia - timedelta(days=referencia.weekday())
+    domingo = segunda + timedelta(days=6)
+    return datetime.combine(segunda, time.min), datetime.combine(domingo, time.max)
+
+
+def intervalo_mes(referencia: date) -> tuple[datetime, datetime]:
+    """Inicio (dia 1, 00:00) e fim (ultimo dia, 23:59:59) do mes da data."""
+    ultimo_dia = calendar.monthrange(referencia.year, referencia.month)[1]
+    primeiro = referencia.replace(day=1)
+    ultimo = referencia.replace(day=ultimo_dia)
+    return datetime.combine(primeiro, time.min), datetime.combine(ultimo, time.max)
 
 
 def gerar_relatorio(

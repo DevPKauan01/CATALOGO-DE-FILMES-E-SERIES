@@ -7,11 +7,13 @@ Padrao de todas elas:
 
 from __future__ import annotations
 
+import math
 from datetime import date, datetime
 from enum import Enum
 
 NOTA_MINIMA = 0
 NOTA_MAXIMA = 10
+CLASSIFICACOES = ("L", "10", "12", "14", "16", "18")
 ANO_MINIMO = 1888  # ano do primeiro filme da historia
 
 
@@ -39,11 +41,20 @@ def validar_ano(valor: object) -> int:
 
 def validar_nota(valor: object) -> float:
     """Garante que a nota e numerica e esta entre 0 e 10."""
-    if isinstance(valor, bool) or not isinstance(valor, (int, float)):
+    if isinstance(valor, bool) or not isinstance(valor, (int, float)) or math.isnan(valor):
         raise ValueError("A nota deve ser numerica.")
     if valor < NOTA_MINIMA or valor > NOTA_MAXIMA:
         raise ValueError(f"A nota deve estar entre {NOTA_MINIMA} e {NOTA_MAXIMA}.")
     return float(valor)
+
+
+def validar_classificacao(valor: object) -> str:
+    """Garante que a classificacao indicativa e uma das oficiais (L, 10, 12, 14, 16, 18)."""
+    texto = validar_texto(valor, "A classificacao indicativa").upper()
+    if texto not in CLASSIFICACOES:
+        opcoes = ", ".join(CLASSIFICACOES)
+        raise ValueError(f"A classificacao indicativa deve ser uma de: {opcoes}.")
+    return texto
 
 
 def validar_enum(valor: object, classe_enum: type[Enum], nome_campo: str) -> Enum:

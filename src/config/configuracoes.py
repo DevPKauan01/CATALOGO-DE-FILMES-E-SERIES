@@ -5,6 +5,8 @@ from __future__ import annotations
 import json
 import os
 
+from src.utils.validacoes import validar_inteiro_positivo, validar_nota
+
 
 class Configuracoes:
     """Parametros configuraveis do catalogo.
@@ -23,9 +25,23 @@ class Configuracoes:
         multiplicador_duracao: float = 1 / 60,
         casas_decimais_horas: int = 1,
     ) -> None:
-        self.nota_minima_recomendado = nota_minima_recomendado
-        self.limite_listas_por_usuario = limite_listas_por_usuario
+        self.nota_minima_recomendado = validar_nota(nota_minima_recomendado)
+        self.limite_listas_por_usuario = validar_inteiro_positivo(
+            limite_listas_por_usuario, "O limite de listas"
+        )
+        if (
+            isinstance(multiplicador_duracao, bool)
+            or not isinstance(multiplicador_duracao, (int, float))
+            or multiplicador_duracao <= 0
+        ):
+            raise ValueError("O multiplicador de duracao deve ser um numero maior que zero.")
         self.multiplicador_duracao = multiplicador_duracao
+        if (
+            isinstance(casas_decimais_horas, bool)
+            or not isinstance(casas_decimais_horas, int)
+            or casas_decimais_horas < 0
+        ):
+            raise ValueError("As casas decimais devem ser um inteiro maior ou igual a zero.")
         self.casas_decimais_horas = casas_decimais_horas
 
     @classmethod

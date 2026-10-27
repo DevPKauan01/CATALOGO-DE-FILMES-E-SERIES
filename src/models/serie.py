@@ -8,6 +8,7 @@ from src.models.enums import StatusVisualizacao, TipoMidia
 from src.models.episodio import Episodio
 from src.models.midia import Midia
 from src.models.temporada import Temporada
+from src.utils.validacoes import validar_enum
 
 
 class Serie(Midia):
@@ -99,6 +100,49 @@ class Serie(Midia):
                 return temporada
         return None
 
+    def obter_episodio(self, numero_temporada: int, numero_episodio: int) -> Episodio:
+        """Devolve o episodio pelo numero da temporada e do episodio.
+
+        Raises:
+            ValueError: se a temporada ou o episodio nao existirem.
+        """
+        temporada = self._buscar_temporada(numero_temporada)
+        if temporada is None:
+            raise ValueError(f"A serie nao tem a temporada {numero_temporada}.")
+        for episodio in temporada.episodios:
+            if episodio.numero_episodio == numero_episodio:
+                return episodio
+        raise ValueError(
+            f"A temporada {numero_temporada} nao tem o episodio {numero_episodio}."
+        )
+
+    def definir_status_episodio(
+        self,
+        numero_temporada: int,
+        numero_episodio: int,
+        status: StatusVisualizacao,
+        quando: datetime | None = None,
+    ) -> Episodio:
+        """Muda o status de um episodio e ja recalcula o status da serie.
+
+        - ASSISTIDO: registra a data/hora (se o episodio ja estava assistido,
+          mantem a data antiga, a nao ser que 'quando' seja informado);
+        - outros status: limpa a data de conclusao.
+
+        Raises:
+            ValueError: se o episodio nao existir ou o status for invalido.
+        """
+        episodio = self.obter_episodio(numero_temporada, numero_episodio)
+        status = validar_enum(status, StatusVisualizacao, "O status")
+        if status == StatusVisualizacao.ASSISTIDO:
+            if episodio.status != StatusVisualizacao.ASSISTIDO or quando is not None:
+                episodio.marcar_assistido(quando)
+        else:
+            episodio.status = status
+            episodio.data_conclusao = None
+        self.atualizar_status()
+        return episodio
+
     def todos_episodios(self) -> list[Episodio]:
         """Lista com os episodios de todas as temporadas, em ordem."""
         episodios: list[Episodio] = []
@@ -162,9 +206,14 @@ class Serie(Midia):
             self.data_conclusao = None
 
     def marcar_concluida(self, quando: datetime | None = None) -> None:
-        """Marca todos os episodios como assistidos (a serie vira ASSISTIDO)."""
+        """Marca os episodios que faltam como assistidos (a serie vira ASSISTIDO).
+
+        Episodios que ja estavam assistidos mantem a data original, pra nao
+        distorcer o relatorio de tempo assistido por periodo.
+        """
         for episodio in self.todos_episodios():
-            episodio.marcar_assistido(quando)
+            if episodio.status != StatusVisualizacao.ASSISTIDO:
+                episodio.marcar_assistido(quando)
         self.atualizar_status()
 
     # ------------------------------------------------------------------
