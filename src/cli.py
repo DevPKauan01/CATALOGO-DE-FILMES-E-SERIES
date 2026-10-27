@@ -5,6 +5,7 @@ Uso (a partir da raiz do projeto):
     python -m src.cli midia adicionar --titulo "Matrix" --tipo FILME ...
     python -m src.cli midia listar
     python -m src.cli --help
+    python -m src.cli              (sem comando: abre o menu interativo)
 
 Os dados ficam em dados/catalogo.json e dados/usuario.json. Na primeira
 execucao o catalogo e criado com as midias do seed.
@@ -429,8 +430,18 @@ def construir_parser() -> argparse.ArgumentParser:
 
 
 def main(argv: list[str] | None = None) -> int:
-    """Executa um comando. Devolve 0 (ok) ou 1 (erro de regra/validacao)."""
-    args = construir_parser().parse_args(argv)
+    """Executa um comando (ou abre o menu, se nao houver comando).
+
+    Devolve 0 (ok) ou 1 (erro de regra/validacao).
+    """
+    argumentos = sys.argv[1:] if argv is None else argv
+    if not argumentos:
+        # sem nenhum comando: abre o menu interativo (src/menu.py)
+        from src.menu import main as abrir_menu
+
+        abrir_menu()
+        return 0
+    args = construir_parser().parse_args(argumentos)
     try:
         sistema = Sistema.abrir(args.dados, args.settings)
         args.func(sistema, args)
@@ -442,3 +453,36 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
+
+# ----------------------------------------------------------------------
+# COMO RODAR (na raiz do projeto)
+# ----------------------------------------------------------------------
+# Menu interativo (sem nenhum comando depois):
+#   python -m src.cli
+#   (digite o numero da opcao e siga as perguntas; 0 sai)
+#
+# Subcomandos:
+#   python -m src.cli --help
+#
+#   python -m src.cli midia adicionar --titulo "Matrix" --tipo FILME --genero Ficcao --ano 1999 --duracao 136 --classificacao 14
+#   python -m src.cli midia avaliar --titulo "Interestelar" --nota 9
+#   python -m src.cli midia listar --por-nota
+#   python -m src.cli midia relatorio top
+#
+#   python -m src.cli serie adicionar-episodio --serie "Dark" --temporada 1 --episodio 2 --titulo "Mentiras" --duracao 50 --lancamento 2017-12-08
+#   python -m src.cli serie atualizar-status --serie "Dark" --temporada 1 --episodio 1 --status ASSISTIDO
+#
+#   python -m src.cli usuario criar-lista --nome "Maratona"
+#   python -m src.cli usuario adicionar-favorito --titulo "Interestelar" --lista "Maratona"
+#
+# Outros relatorios:
+#   python -m src.cli midia relatorio generos
+#   python -m src.cli midia relatorio tempo
+#   python -m src.cli midia relatorio completo
+#
+# Testes:
+#   python -m pip install pytest
+#   python -m pytest -v
+#
+# Na primeira execucao os dados de exemplo (seed) sao criados em dados/.
+# Para recriar os dados: python -m src.cli seed --forcar
