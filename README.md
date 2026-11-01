@@ -26,7 +26,7 @@ ficam no `settings.json`.
 ├── settings.json
 ├── pytest.ini                # configuração do pytest
 ├── dados/                    # catalogo.json e usuario.json (criados no 1º uso)
-├── tests
+├── testes
 │   └── test_catalogo.py      # testes com pytest
 └── src
     ├── cli.py                    # CLI com subcomandos (ponto de entrada)
@@ -220,6 +220,95 @@ Usuario             --> Configuracoes  associação (usa o limite de listas)
 `<>--` é o losango (o "todo" fica do lado do losango) e `-->` é associação
 simples.
 
+## Diagrama de classes
+
+```mermaid
+classDiagram
+    class Midia {
+        +str titulo
+        +TipoMidia tipo
+        +str genero
+        +int ano
+        +int duracao_minutos
+        +str classificacao_indicativa
+        +list elenco
+        +StatusVisualizacao status
+        +float nota
+        +datetime data_conclusao
+        +duracao_total() int
+        +nota_media() float
+        +marcar_concluida()
+        +__str__() __repr__() __eq__() __lt__()
+    }
+    class Filme
+    class Serie {
+        +list temporadas
+        +adicionar_episodio()
+        +atualizar_status()
+        +__len__()
+    }
+    class Temporada {
+        +int numero
+        +adicionar_episodio()
+        +__len__()
+    }
+    class Episodio {
+        +int numero_temporada
+        +int numero_episodio
+        +str titulo
+        +int duracao_minutos
+        +date data_lancamento
+        +StatusVisualizacao status
+        +float nota
+        +marcar_assistido()
+    }
+    class Usuario {
+        +str nome
+        +criar_lista()
+        +adicionar_favorito()
+        +registrar_conclusao()
+    }
+    class ListaPersonalizada {
+        +str nome
+        +adicionar()
+        +remover()
+    }
+    class RegistroHistorico {
+        +datetime data_conclusao
+    }
+    class Catalogo {
+        +adicionar()
+        +concluidas()
+        +nota_geral()
+    }
+    class Configuracoes {
+        +float nota_minima_recomendado
+        +int limite_listas_por_usuario
+        +float multiplicador_duracao
+        +minutos_para_horas()
+    }
+    class Sistema {
+        +adicionar_filme()
+        +avaliar()
+        +concluir()
+        +listar()
+    }
+
+    Midia <|-- Filme
+    Midia <|-- Serie
+    Serie *-- Temporada
+    Temporada *-- Episodio
+    Usuario *-- ListaPersonalizada
+    Usuario *-- RegistroHistorico
+    Catalogo o-- Midia
+    ListaPersonalizada --> Midia
+    RegistroHistorico --> Midia
+    Usuario --> Configuracoes
+    Sistema *-- Catalogo
+    Sistema *-- Usuario
+    Sistema *-- Configuracoes
+```
+
 ## Rodando
 
 Na raiz do projeto (Python 3.10 ou mais novo). Na primeira execução o catálogo
@@ -259,7 +348,7 @@ Use `--help` em qualquer comando, por exemplo `python -m src.cli midia --help`.
 
 ```bash
 python -m pip install pytest
-python -m pytest -v
+pytest -v          # ou: python -m pytest -v
 ```
 
 Os testes cobrem validações, métodos especiais, status automático da série,
@@ -272,12 +361,14 @@ nota média, duplicidade, listas e favoritos, relatórios e persistência.
 - Só dá pra avaliar o que já foi assistido; a nota da série é a média das
   notas dos episódios.
 - O status da série é calculado pelos episódios (todos assistidos = ASSISTIDO).
-- Relatórios consideram só mídias com status ASSISTIDO.
+- Relatórios consideram só mídias com status ASSISTIDO, inclusive a nota
+  geral do catálogo. Exceção: o ranking de séries mais assistidas inclui
+  séries em andamento, e o relatório de período conta episódio por episódio.
 - Erros de regra viram `Erro: ...` com código de saída 1, sem mostrar traceback.
 
-## Onde estou (semana 4)
+## Onde estou (semana 5 - entrega final)
 
-- [x] estrutura de classes e UML textual
+- [x] estrutura de classes, UML textual e diagrama de classes
 - [x] `Midia`, `Filme`, `Serie`, `Temporada` e `Episodio` com validações (`@property`) e métodos especiais
 - [x] `Usuario`, `ListaPersonalizada`, `RegistroHistorico`, `Catalogo` e `Sistema`
 - [x] persistência em JSON e seed
@@ -286,4 +377,5 @@ nota média, duplicidade, listas e favoritos, relatórios e persistência.
 - [x] CLI com subcomandos e menu interativo
 - [x] testes com pytest
 - [x] relatórios (nota por gênero, tempo por tipo, top, séries mais assistidas, por semana/mês)
-- [ ] refinamento, diagrama final e tag `v1.0` (semana 5)
+- [x] refinamento e diagrama final
+- [ ] tag `v1.0` no GitHub (`git tag v1.0 && git push origin v1.0`)

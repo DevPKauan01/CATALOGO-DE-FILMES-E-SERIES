@@ -79,8 +79,11 @@ class Catalogo:
         return [m for m in self._midias if m.status == StatusVisualizacao.ASSISTIDO]
 
     def nota_geral(self) -> float | None:
-        """Nota media geral do catalogo (None se nao ha notas)."""
-        notas = [m.nota_media() for m in self._midias if m.nota_media() is not None]
+        """Nota media geral do catalogo (None se nao ha notas).
+
+        Considera so midias concluidas (ASSISTIDO), como os demais relatorios.
+        """
+        notas = [m.nota_media() for m in self.concluidas() if m.nota_media() is not None]
         if len(notas) == 0:
             return None
         return sum(notas) / len(notas)

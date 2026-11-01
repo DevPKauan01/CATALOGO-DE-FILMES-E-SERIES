@@ -155,9 +155,25 @@ def test_catalogo_aceita_mesmo_titulo_com_ano_ou_tipo_diferente():
 def test_nota_geral_do_catalogo():
     cat = Catalogo()
     assert cat.nota_geral() is None
-    cat.adicionar(filme("A", nota=6))
-    cat.adicionar(filme("B", nota=10))
+    a, b = filme("A", nota=6), filme("B", nota=10)
+    a.marcar_concluida()
+    b.marcar_concluida()
+    cat.adicionar(a)
+    cat.adicionar(b)
     assert cat.nota_geral() == 8
+
+
+def test_nota_geral_ignora_midias_nao_concluidas():
+    cat = Catalogo()
+    feito = filme("A", nota=6)
+    feito.marcar_concluida()
+    cat.adicionar(feito)
+    cat.adicionar(filme("B", nota=10))  # tem nota, mas nao esta ASSISTIDO
+    serie = serie_com_eps(2)
+    serie.definir_status_episodio(1, 1, St.ASSISTIDO)
+    serie.obter_episodio(1, 1).nota = 10  # serie em andamento
+    cat.adicionar(serie)
+    assert cat.nota_geral() == 6
 
 
 def test_buscar_ignora_maiusculas_e_pedacos():
