@@ -24,7 +24,6 @@ ficam no `settings.json`.
 .
 ├── README.md
 ├── settings.json
-├── pytest.ini                # configuração do pytest
 ├── dados/                    # catalogo.json e usuario.json (criados no 1º uso)
 ├── testes
 │   └── test_catalogo.py      # testes com pytest
@@ -348,7 +347,7 @@ Use `--help` em qualquer comando, por exemplo `python -m src.cli midia --help`.
 
 ```bash
 python -m pip install pytest
-pytest -v          # ou: python -m pytest -v
+python -m pytest -v
 ```
 
 Os testes cobrem validações, métodos especiais, status automático da série,
@@ -378,4 +377,4 @@ nota média, duplicidade, listas e favoritos, relatórios e persistência.
 - [x] testes com pytest
 - [x] relatórios (nota por gênero, tempo por tipo, top, séries mais assistidas, por semana/mês)
 - [x] refinamento e diagrama final
-- [ ] tag `v1.0` no GitHub (`git tag v1.0 && git push origin v1.0`)
+- [x] tag `v1.0` no GitHub
